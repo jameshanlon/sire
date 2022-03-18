@@ -1,0 +1,44 @@
+Grammar for intermediate representation.
+
+=========================================================
+Statements
+=========================================================
+
+LABEL  : label
+
+CJUMP  : TEMP NAME NAME
+
+JUMP   : NAME
+
+MOVE   : % dst, src
+    MEM  (TEMP | CONST)
+    TEMP (TEMP | CONST | BINOP | FNCALL | MEM | NAME)
+
+PCALL  : NAME {TEMP-list}
+
+INPUT  : % src ? dst
+    TEMP TEMP
+
+OUTPUT : % dst ! src
+    TEMP TEMP 
+
+RETURN : TEMP | CONST | BINOP | FNCALL | MEM
+
+=========================================================
+Elements
+=========================================================
+
+TEMP  : temp
+
+NAME  : label
+
+CONST : int
+
+MEM   : TEMP | CONST | NAME
+
+BINOP : % op1 * op2
+    (TEMP | NAME) (TEMP | CONST)
+    CONST          TEMP
+
+FNCALL :
+    NAME {TEMP-list}

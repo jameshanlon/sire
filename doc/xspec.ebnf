@@ -1,0 +1,135 @@
+program = var-decls proc-decls | module;
+
+module = name ( 
+    "(" formal-arguments ")" "is" "{" var-decls proc-decls "}"
+  | "is" "{" var-decls proc-decls "}" )
+  ;
+
+var-decls = { var-decl ";" };
+
+var-decl = 
+      "module" name 
+    | "chan" name 
+    | "port" ":" expr 
+    | "timer" name 
+    | "var" name ["[" expr "]"] 
+    | "val" name "=" expr
+    ;
+
+proc-decls = { proc-decl };
+
+proc-decl = ["ext"] ( "proc" | "func" ) name ["(" formals ")"] "is" var-decls stmt;
+
+formals = formal {"," formal};
+
+formal = 
+    "val" name 
+  | "res" name 
+  | "chan" name ["$"] 
+  | name "[" [expr] "]"
+  ;
+
+stmts = stmt ( ( ";" | "|" ) stmts | "&" stmts );
+
+stmt = 
+    "skip" 
+  | "return" expr-list 
+  | "if" expr ( "when" input-stmt "do" stmt | "then" stmt "else" stmt )
+  | "while" expr "do" stmt 
+  | "when" input-stmt "do" stmt 
+  | name left ( ":=" | "?" | "!" | "??" | "!!" | "::=" ) expr-list
+  | "with" ( name | "do" stmt )
+  | "{" stmts "}"
+  ;
+
+(* figure out what these actually mean *)
+input-stmt = contains the operatons "?" | mstrseq | slaveseq | pcall;
+
+(* not included restrictions on element *)
+left = left-element {"," left-element};
+
+left-element =
+    name
+  | name "[" expr "]"
+  | name "(" [expr-list] ")"
+  | name "." name "(" [expr-list] ")"
+  ;
+
+element = 
+    name ( "[" expr "]" | "." name "(" [expr-list] ")" | "(" [expr-list] ")" ) 
+  | number 
+  | boolean 
+  | string 
+  | "(" expr ")"
+  ;
+
+expr = 
+    elememt 
+  | "-" element 
+  | "~" element 
+  | element diadic-op right
+  ;
+
+right = element associative-op right;
+
+expr-list = expr {"," expr};
+
+name-list = name {"," name};
+
+(* find out what the $ is about *)
+name = identifier ["$"];
+
+(* not included in source *)
+input = 
+    "at" expr 
+  | "after" expr 
+  | left ":" expr;
+
+(* not sure of symbols for those written *)
+diadic-op = 
+      "+" 
+    | "-" 
+    | "*" 
+    | "/" 
+    | "%" 
+    | "OR" 
+    | "AND" 
+    | "^" 
+    | "<<" 
+    | ">>" 
+    | "=" 
+    | "~=" 
+    | "<" 
+    | "<=" 
+    | ">" 
+    | ">=" 
+    | sub 
+    | lsub 
+    | bitsub 
+    | lbitsub 
+    | "for" 
+    | ":"
+    ;
+
+associative-op = 
+    "AND" 
+  | "OR" 
+  | "^" 
+  | "+" 
+  | "*"
+  ;
+
+boolean = 
+    "true"
+  | "false"
+  ;
+
+number = digit {digit};
+
+digit = ? [0-9] ?;
+
+string = '"' { characters - '"' } '"';
+
+characters = ? [A-Za-z0-9] ?;
+
+identifier = ?  ?;

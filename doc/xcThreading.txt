@@ -1,0 +1,45 @@
+How the XC compiler uses RAM
+==================================================
+
+The boot code setups thread 0's stack pointer to the end of RAM. The stack grow
+downwards. When a par is executed the thread sets the stack pointers of its
+child threads to point to memory in its own stack frame.
+
+void thread() {
+    par {
+      f();
+      g();
+      h();
+    }
+}
+
+Assume f(), g() and h() all require 10 words of stack space. The current thread
+must setup two additional threads to run two statements of the par and then
+execute the remaining third statement. Suppose f() runs on the original (master)
+thread and g() and h() run on the new child threads. In total the thread will
+require 30 words of stack for the calls, plus one word to store the return
+address. We shall refer to the value of the stack pointer on entry to thread as
+the frame. The code looks something like this:
+
+    entsp 21               // Extend stack to frame[-21] (20 words for two children + 1 for return address) 
+                           // the return address is saved to frame[0]
+    ...                    // code to get two synchronised threads 
+    ldaw r11, sp[10]       // r11 = frame[-11] 
+    init t[child1]:sp, r11 // child 1 uses stack space frame[-11] to [frame-20] 
+    ldaw r11, sp[20]       // r11 = frame[-21] 
+    init t[child2]:sp, r11 // child 2 uses stack space frame[-1] to frame[-10] 
+    msync                  // start threads
+    bl f()                 // f will further extend stack by 10 words and use frame[-21] to frame[-30] ...
+
+Notice in the above code if either of the child threads use more than 10 words
+they will overflow into another thread's stack space. To guard against the
+compiler emits information about the stack space requirements of each thread.
+The mapper patches the operands of instructions which manipulate the stack so
+that space reserved when setting up the thread is equal to the maximum stack
+requirement of the thread. In cases where the stack space is unknown (e.g.
+recursion / function pointers) it can be provided using a pragma.
+
+The data pointer / constant pool pointer points to the same area for each
+thread. The XC disjointness rules ensure safe access to globals.
+All threads share access to the heap. A lock is used to guard access to the heap
+when allocating / freeing memory.

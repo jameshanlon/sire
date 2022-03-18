@@ -1,0 +1,61 @@
+Register uses
+==============================================================================
+
+    r0-r3  (caller save) arguments and returns
+    r4-r10 (callee save) general purpose
+    r11    (caller save) general purpose
+    CP     (caller save) constant pool pointer
+    DP     (caller save) static data pointer
+    SP     (caller save) stack pointer (base address)
+    LR     (caller save) link register (address to return to when a procedure completes)
+
+Calling convention
+==============================================================================
+
+Caller:
+    - Put parameters (right-to-left order) in r0-r3, with additional m parameters
+      pushed on stack from sp[1] to sp[m+1]
+    - Call function f with "bl f" (LR = pc+1)
+    - Read return values 1-4 from r0-r3 and 5-k from SP[m+1] to SP[m+k]
+
+Callee:
+    - "entsp n" (SP[0] = LR, SP = SP - n) this saves the LR in
+      SP[0] of caller frame, and extends the stack pointer by n words
+    - Push m required general purpose registers (r4-r10) onto stack from SP[0]
+      to SP[m] where m < 7
+    - Load m params passed on stack from SP[n+1] to SP[n+m]
+    - <execute function body>
+    - Pop m saved general purpose registers back from SP[0] to SP[m], to
+      r4-r(4+m)
+    - "retsp n" (LR = SP[0], SP = SP + n, PC = LR)
+
+Stack layout
+===============================================================================
+
+Single frame:
+
+    ---------------------
+    (b) branch link (for non-leaves)
+    (o) outgoing arguments
+    (p) preserved registers
+    (l) locals
+    --------------------
+
+E.g.:
+           Relative to Callee (frame i)
+           -------------------------------
+           sp[0]         = LR
+frame i:   sp[b]         = outgoing arg 4
+           sp[b+1]       = outgoing arg 5
+           ...
+           sp[b+o]       = outgoing arg 5+o
+           sp[b+o]       = preserved reg
+           sp[b+o+1]     = preserved reg
+           ...
+           sp[b+o+m]     = preserved reg
+           sp[b+o+m+1]   = local 0
+           sp[b+o+m+2]   = local 1
+           ...
+           sp[b+m+l]     = local l
+           -------------------------------
+

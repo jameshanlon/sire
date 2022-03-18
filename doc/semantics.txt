@@ -1,0 +1,45 @@
+'x' language specification & semantics
+================================================================
+
+Variable declarations
+---------------------
+
+Global variable declarations:
+
+    var   - (single value or array)
+    chan  
+    val
+    port
+
+Formal parameters:
+
+    <name>[]  (array)
+    val       (var, val)
+    res       (port) 
+    chan      (chan)
+
+Local variable declarations:
+
+    var   (single and array)
+    chan
+    timer
+
+Scope rules
+-----------
+
+
+
+Error checking (Semantic analysis)
+---------------------------------
+
+    - Existance of a 'main' procedure 
+    - No declarations of port or val types in local procedure/function scope
+    - Procedure and function calls are valid: 
+        - Exists a matching signature (name and formal parameters)
+        - On matching name, check arguments match formals
+    - Assignments can only target variables of type (single or array) var
+    - I/O operators can only act on variables of type chan or port
+    - A variable is defined (globally, formally or locally) before it is used
+    - Constant expressions cannot contain function calls, strings, arrays. If
+      they contain named variables, they muct be of type val.
+    - A symbol can only be used once in a scope

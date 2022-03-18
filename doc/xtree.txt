@@ -1,0 +1,84 @@
+module:
+    (moddef, name, (vardecls), (procdecls), (formals) | nil, 0)
+    (module, name, (vardecls), (procdecls))
+    (module, nil, (vardecls), (procdecls))
+
+vardecls:
+    (vardecl)
+    (";", (vardecls), (vardecl))
+    (";", (vardecl), (vardecl))
+
+vardecl:
+    (module, name, -1, -1)
+    (chan,   name, -1, -1, ms, (chan, name, -1, -1, slave))
+    (port,   name, (expr))
+    (timer,  name, -1, -1)
+    (array,  name, -1, -1, (expr))
+    (var,    name, -1, -1)
+    (val,    name, (expr))
+
+procdecls:
+    (procdecl)
+    (";", procdecls, procdecl)
+    (";", procdecl, procdecl)
+
+procdecl: 
+    (proc | func, name, (formals) | nil, (body), 0)
+
+body: 
+    (body, (vardecls), (stmt))
+
+formals:
+    (valp    name, -1, -1)
+    (resp,   name, -1, -1)
+    (chan,   name, -1, -1, master | slave)
+    (array,  name, -1, -1, (expr) | nil)
+    (var,    name, -1, -1)
+    (",", (formals), (formals))
+
+element:
+    (sub, name, (expr))
+    (fncall, (".", parent, name), exprlist | nil, 0)
+    (fncall, name, exprlist | nil, 0)
+    (number, numval)
+
+expr:
+    (element)
+    ("-", (element))
+    ("~", (element))
+    (diadic-op, (element), (right))
+
+right:
+    (associative-op, (element), (right))
+
+left:
+    ("," (element), (left))
+
+stmts:
+    (";" | "|", (stmt), (stmts))
+    ("&", (stmt), (stmts, 0, 0, 0, 0)
+
+stmt:
+    (skip)
+    (return, (exprlist), 0)
+    (when, (expr), (stmt), (stmt), 0, nil)
+    (if, (expr), (stmt), (stmt), nil, nil, nil)
+    (while, (expr), (stmt), nil, nil)
+    (name, (left), (exprlist), 0)
+    (with, name, (stmt), 0)
+    (stmts)
+
+input:
+    (at, (expr))
+    (after, (expr))
+    (":", (left), (expr))
+    (input, ?, nil, 0)
+
+exprlist:
+    (",", (expr), exprlist)
+
+namelist:
+    (",", name, (namelist))
+
+name:
+    (master, name)

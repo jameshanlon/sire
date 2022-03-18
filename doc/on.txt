@@ -1,0 +1,106 @@
+Implementation of 'on'
+======================
+
+ - Implemented as a lightweight kernel
+ - One-to-many channels between kernel procedures
+
+=====================================================
+begin kernel
+=====================================================
+
+enum {
+    t_MIGRATE,
+    t_HOST,
+    t_YEILD
+};
+
+val NUM_THREADS := 7;
+var threads[NUM_THREADS];
+var use;
+
+.align 64
+
+% Handle an interrupt
+proc intHandler() {
+    
+    ENTSP <kernel-frame-size>
+    mov spc, sp
+    mov ssr, sr
+    mov sed, ed
+    (or KENTSP)
+
+    int et = GETET % set to 15 on KCALL 
+    int ed = GETED % set to KCALL op
+
+    switch(ed) {
+    case t_MIGRATE: migrate(); break;
+    case t_HOST:    host();    break;
+    case t_YEILD:   yeild();   break;
+    default:        exit();
+    }
+
+    <reduce sp by kframesize>
+    KRET
+    (or KRETSP)
+}
+
+proc init(chanend c)
+{
+    use := 0;
+
+    % Get a chanend
+
+    % Initialise set of threads
+    for i:=0 to NUM_THREADS-1 do
+    {
+        threads[i] := GETR(RES_TYPE_THREAD);
+        TINITSP threads[i], sp
+        TINITDP threads[i], &dp
+        TINITCP threads[i], &cp
+        TINITLR threads[i], &yeild
+    }
+
+    % Intialise kernel entry point (for KCALLs)
+    ldap r11, intHandler
+    SETKEP r11
+
+    % Set interrupt vector for the channel
+    ldap r11, intHandler
+    setv res[c], r11
+    
+    % Enable interrupts and events from the 'on' channel
+    EEU res[c]
+    (setc res[c], CTRL_SETC_IE_MODE_INTERRUPT (0x000a))??
+    
+    % Enable interrupts on this thread
+    SETSR IEBLE (0x2)
+
+    if(node 0, core 0) {
+        used |= 0x1;
+        ldap r11, main
+        TSETPC r11
+    } else {
+        WAITEU
+    }
+}
+
+proc migrate(chanend c, val node, val core)
+{
+}
+
+proc host(chanend c) 
+{
+}
+
+proc yeild()
+{
+}
+
+proc exit()
+{
+}
+
+=====================================================
+end kernel
+=====================================================
+

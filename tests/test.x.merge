@@ -1,0 +1,33 @@
+const LENGTH:=64
+port led : 0x00010600
+var a: int[LENGTH]
+
+% Merge
+proc merge(a, b, c: int[]; la, lb: int) is
+  var i, j, k: int
+{ i:=0 ; j:=0 ; k:=0
+; while (i<la) and (j<lb) do 
+  { if(a[i] <= b[j]) 
+    then 
+    { c[k] := a[i] 
+    ; i:=i+1 ; k:=k+1
+    } 
+    else 
+    { c[k] := b[j]
+    ; j:=j+1 ; k:=k+1
+    }
+  }
+; if i<la then c[k] := a[i] else skip
+; if j<lb then c[k] := b[j] else skip
+}
+
+% Main
+proc main() is
+  var x,y: int[]
+{
+  led ! 1
+; x aliases a[0..]
+; y aliases a[LENGTH/2..]
+; merge(x, y, a, LENGTH/2, LENGTH/2)
+}
+
