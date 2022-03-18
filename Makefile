@@ -34,18 +34,17 @@ CMP_SRCS := \
     compiler/spill.c \
     compiler/regalloc.c \
     compiler/codegen.c \
-    compiler/instructions.c 
+    compiler/instructions.c
 
-CMP_HDRS  := $(subst compiler/main.h,, $(CMP_SRCS:.c=.h))
-CMP_OBJS  := $(addprefix obj/, compiler/x.tab.o compiler/lex.yy.o $(CMP_SRCS:.c=.o))
+CMP_HDRS := $(subst compiler/main.h,, $(CMP_SRCS:.c=.h))
+CMP_OBJS := $(addprefix obj/, compiler/x.tab.o compiler/lex.yy.o $(CMP_SRCS:.c=.o))
 
-ALL_SRCS  := $(CMP_SRCS)
-ALL_HDRS  := $(CMP_HDRS)
-ALL_OBJS  := $(CMP_OBJS)
+ALL_SRCS := $(CMP_SRCS)
+ALL_HDRS := $(CMP_HDRS)
+ALL_OBJS := $(CMP_OBJS)
 
-CMP       := bin/sire
+CMP := bin/sire
 
-# Targets
 .PHONY: all compiler dirs clean count
 all:  dirs $(CMP)
 compiler:  dirs $(CMP)
@@ -84,7 +83,7 @@ obj/%.o: %.c
 
 # Generate compiler parser with Bison
 obj/compiler/x.tab.o: compiler/x.y
-	echo Generating $@
+	@echo Generating $@
 	$(BISON) $(BISONFLAGS) compiler/x.y -o compiler/x.tab.c
 	$(CC) -g -c compiler/x.tab.c -o x.tab.o
 	mv x.tab.o obj/compiler/
@@ -92,9 +91,9 @@ obj/compiler/x.tab.o: compiler/x.y
 # Generate compiler lexer with Flex
 obj/compiler/lex.yy.o: compiler/x.lex compiler/x.tab.c compiler/x.tab.h
 	@echo Generating $@
-	@$(FLEX) -o compiler/lex.yy.c compiler/x.lex 
-	@$(CC) -g -c compiler/lex.yy.c -o lex.yy.o
-	@mv lex.yy.o obj/compiler/
+	$(FLEX) -o compiler/lex.yy.c compiler/x.lex
+	$(CC) -g -c compiler/lex.yy.c -o lex.yy.o
+	mv lex.yy.o obj/compiler/
 
 # Create required build directories if they don't exist
 dirs:

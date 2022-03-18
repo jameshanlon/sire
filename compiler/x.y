@@ -16,13 +16,14 @@ void yyerror(a_module *astRoot, char *s) {
     err_report(t_error, tp, s);
 }
 
-int yylex();
+extern int yylex();
 
 %}
 
 /* Create a (pure) re-entrant parser (no globals) */
-//%define api.pure full
-%error-verbose
+%require "3.2"
+%define api.pure full
+%define parse.error verbose
 %parse-param {a_module *astRoot}
 
 /* Operator presidence: lowest first, together equal */
@@ -31,7 +32,7 @@ int yylex();
 %left PLUS MINUS
 %left MULT DIV
 
-%union{
+%union {
     int              intval;
     unsigned int     uintval;
     bool             boolval;
@@ -60,18 +61,18 @@ int yylex();
     a_name           name;
 }
 
-%token <uintval> NUMBER      
+%token <uintval> NUMBER
 %token <strval>  ID STRING
-%token <boolval> TRUE FALSE       
-%token LBRACKET RBRACKET LPAREN RPAREN 
-%token PROC FUNC IS BODY RETURN 
+%token <boolval> TRUE FALSE
+%token LBRACKET RBRACKET LPAREN RPAREN
+%token PROC FUNC IS BODY RETURN
 %token IF THEN ELSE WHILE DO TO FOR ON SKP ALIASES DOTS CONNECT CORE
-%token ASS INPUT OUTPUT 
-%token START END 
+%token ASS INPUT OUTPUT
+%token START END
 %token SEMICOLON BAR COMMA COLON
 %token VAR CHAN CHANEND PORT TIMER INT CONST
 %token MASTER SLAVE
-%token PLUS MINUS MULT DIV REM OR AND XOR LSHIFT RSHIFT 
+%token PLUS MINUS MULT DIV REM OR AND XOR LSHIFT RSHIFT
     EQ NE LS LE GR GE NOT NEG
 
 %type <module>       program
@@ -84,7 +85,7 @@ int yylex();
 %type <varType>      var_type
 %type <idList>       id_list
 %type <varId>        var_id
-%type <procDecls>    proc_decls proc_decl_seq 
+%type <procDecls>    proc_decls proc_decl_seq
 %type <procDecl>     proc_decl
 %type <formals>      formals formals_seq
 %type <paramDeclSeq> param_decl_seq
@@ -105,8 +106,8 @@ int yylex();
 // Program declaration
 //=============================================================================
 
-program :     
-    const_decls port_decls var_decls proc_decls 
+program :
+    const_decls port_decls var_decls proc_decls
     { *astRoot = a_module_Main(tp, $1, $2, $3, $4); }
   ;
 
@@ -150,7 +151,7 @@ port_decl :
 // Variable declarations
 //=============================================================================
 
-var_decls : 
+var_decls :
   /* empty */                     { $$ = NULL; }
   | VAR var_decls_seq             { $$ = $2; }
   ;
@@ -185,7 +186,7 @@ var_id :
 // Procedure declarations
 //=============================================================================
 
-proc_decls : 
+proc_decls :
   /* empty */                               { $$ = NULL; }
   | proc_decl_seq                           { $$ = $1; }
   ;
@@ -195,10 +196,10 @@ proc_decl_seq :
   | proc_decl proc_decl_seq                 { $$ = a_ProcDecls($1, $2); }
   ;
 
-proc_decl : 
-     PROC name LPAREN formals RPAREN IS var_decls stmt 
-                             { $$ = a_procDecl_Proc(tp, $2, $4, $7, $8); } 
-  |  FUNC name LPAREN formals RPAREN IS var_decls stmt 
+proc_decl :
+     PROC name LPAREN formals RPAREN IS var_decls stmt
+                             { $$ = a_procDecl_Proc(tp, $2, $4, $7, $8); }
+  |  FUNC name LPAREN formals RPAREN IS var_decls stmt
                              { $$ = a_procDecl_Func(tp, $2, $4, $7, $8); }
   ;
 
@@ -206,19 +207,19 @@ proc_decl :
 // Formal parameter declarations
 //=============================================================================
 
-formals : 
+formals :
   /* empty */                               { $$ = NULL; }
   | formals_seq                             { $$ = $1; }
   ;
 
 formals_seq :
-    param_decl_seq COLON param_type                         
+    param_decl_seq COLON param_type
                                             { $$ = a_Formals($3, $1, NULL); }
-  | param_decl_seq COLON param_type SEMICOLON formals_seq   
+  | param_decl_seq COLON param_type SEMICOLON formals_seq
                                             { $$ = a_Formals($3, $1, $5); }
-  ;                                        
-                                           
-param_type :                              
+  ;
+
+param_type :
     INT                                     { $$ = t_formal_int; }
   /*| PORT                                    { $$ = t_formal_port; }
   | CHANEND                                 { $$ = t_formal_chanend; }*/
@@ -228,13 +229,13 @@ param_type :
 param_decl_seq :
     var_id                               { $$ = a_ParamDeclSeq($1, NULL); }
   | var_id COMMA param_decl_seq           { $$ = a_ParamDeclSeq($1, $3); }
-  ;                                        
+  ;
 
 //=============================================================================
 // Statements
 //=============================================================================
 
-stmt : 
+stmt :
     SKP                          { $$ = a_stmt_Skip    (tp);             }
   | proc_call                    { $$ = $1;                              }
   | left ASS expr                { $$ = a_stmt_Ass     (tp, $1, $3);     }
@@ -242,10 +243,10 @@ stmt :
   | left OUTPUT expr             { $$ = a_stmt_Out     (tp, $1, $3);     }
   | IF expr THEN stmt ELSE stmt  { $$ = a_stmt_If      (tp, $2, $4, $6); }
   | WHILE expr DO stmt           { $$ = a_stmt_While   (tp, $2, $4);     }
-  | FOR left ASS expr TO expr DO stmt     
+  | FOR left ASS expr TO expr DO stmt
                                  { $$ = a_stmt_For (tp, $2, $4, $6, $8); }
-  | ON left COLON on_proc_call      
-                                 { $$ = a_stmt_On      (tp, $2, $4);     } 
+  | ON left COLON on_proc_call
+                                 { $$ = a_stmt_On      (tp, $2, $4);     }
   | CONNECT left TO left COLON left
                                  { $$ = a_stmt_Connect (tp, $4, $2, $6); }
   | name_elem ALIASES name_elem LBRACKET expr DOTS RBRACKET
@@ -254,19 +255,19 @@ stmt :
   | START stmt_seq END           { $$ = a_stmt_Seq     (tp, $2);         }
   | START stmt_par END           { $$ = a_stmt_Par     (tp, $2);         }
   ;
-  
-stmt_seq : 
-    stmt                         { $$ = a_StmtSeq($1, NULL);                 }  
+
+stmt_seq :
+    stmt                         { $$ = a_StmtSeq($1, NULL);                 }
   | stmt SEMICOLON stmt_seq      { $$ = a_StmtSeq($1, $3);                   }
   | error SEMICOLON stmt_seq     { yyerrok;                                  }
   ;
-      
-stmt_par : 
-    stmt BAR stmt                { $$ = a_StmtPar($1, a_StmtPar($3, NULL));  } 
+
+stmt_par :
+    stmt BAR stmt                { $$ = a_StmtPar($1, a_StmtPar($3, NULL));  }
   | stmt BAR stmt_par            { $$ = a_StmtPar($1, $3);                   }
   | error BAR stmt_par           { yyerrok;                                  }
   ;
-      
+
 proc_call:
     name LPAREN RPAREN           { $$ = a_stmt_PCall(tp, $1, NULL);   }
   | name LPAREN expr_list RPAREN { $$ = a_stmt_PCall(tp, $1, $3);     }
@@ -278,10 +279,10 @@ on_proc_call:
   ;
 
 //=============================================================================
-// Expressions 
+// Expressions
 //=============================================================================
 
-expr_list : 
+expr_list :
     expr                         { $$ = a_Exprlist    ($1, NULL);            }
   | expr COMMA expr_list         { $$ = a_Exprlist    ($1, $3);              }
   ;
@@ -309,7 +310,7 @@ expr :
   ;
 
 /* Associative operators */
-right : 
+right :
     elem               { $$ = a_expr_monadic(tp, t_expr_none,   $1);     }
   | elem AND right     { $$ = a_expr_diadic (tp, t_expr_and,    $1, $3); }
   | elem OR right      { $$ = a_expr_diadic (tp, t_expr_or,     $1, $3); }
@@ -319,10 +320,10 @@ right :
   ;
 
 //=============================================================================
-// Elements 
+// Elements
 //=============================================================================
 
-left : 
+left :
     name                         { $$ = a_elem_Name    (tp, $1);         }
   | name LBRACKET expr RBRACKET  { $$ = a_elem_Sub     (tp, $1, $3);     }
   ;
@@ -342,7 +343,7 @@ elem :
 name_elem :
     name                         { $$ = a_elem_Name(tp, $1);             }
 
-name : 
+name :
     ID                           { $$ = a_Name(tp, $1);                  }
   ;
 

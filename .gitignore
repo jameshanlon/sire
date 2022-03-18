@@ -2,3 +2,10 @@ obj/
 bin/
 .DS_Store
 depends.mk
+compiler/lex.yy.c
+compiler/x.output
+compiler/x.tab.c
+compiler/x.tab.h
+cp.S
+jumpTable.S
+program.S
